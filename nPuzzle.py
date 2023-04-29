@@ -4,9 +4,11 @@ from queue import Queue
 # "The Blind Search and Heuristic Search lecture slides and notes annotated from lecture."
 # Python documentation
 # https://www.geeksforgeeks.org/queue-in-python/#
+# https://en.wikipedia.org/wiki/A*_search_algorithm
+
 
 # Must implement
-# 1) Uniform Cost Search (A* with no hill climbing)
+# 1) Uniform Cost Search (A* with no heuristic)
 # 2) A* with the Misplaced Tile heuristic.
 # 3) A* with the Manhattan Distance heuristic.
 

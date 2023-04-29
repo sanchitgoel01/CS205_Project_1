@@ -1,0 +1,122 @@
+class Operators(Enum):
+    UP = 1
+    DOWN = 2
+    LEFT = 3
+    RIGHT = 4
+
+class NPuzzle:
+    // State Representation:
+    // 1d Array of size n x n.
+    // Blank spot represented by -1
+
+    Members:
+        - int size; // 8 puzzle would be 3. 3 x 3
+
+    create_initial_state(self):
+        initial = [i for i in range(0, size * size)]
+        initial[(size*size) - 1] = -1
+
+    possible_operators(self, state):
+        blankIdx = // Find index of blank 
+        blankRow = blankIdx / size
+        blankCol = blankIdx % size
+
+        operators = []
+        if (blankRow > 0)
+            operators.push(Operators.UP)
+
+        if (blankRow < (size - 1))
+            operators.push(Operators.DOWN)
+
+        if (blankCol > 0)
+            operators.push(Operators.LEFT)
+
+        if (blankCol < (size - 1))
+            operators.push(Operators.RIGHT)
+
+        return operators
+
+    apply_operator(self, state, operator):
+        // Find blank idx
+        blank_idx = find_blank()
+        new_blank_idx = blank_idx
+        // Clone state
+        new_state = clone(state)
+        match operator:
+            case UP:
+                new_blank_idx -= size
+            case DOWN:
+                new_blank_idx += size
+            case RIGHT:
+                new_blank_idx += 1
+            case LEFT:
+                new_blank_idx -= 1
+        
+        // Swap what it's in the new blank index
+        temp = new_state[new_blank_idx]
+        new_state[new_blank_idx] = -1
+        new_state[blank_idx] = temp
+
+    is_goal_state(self, state):
+        for i in range(0, (size * size - 1)):
+            if (state[i] != i + 1)
+                return False
+        return True
+
+def misplaced_tile_heuristic(problem, state):
+        size = problem.size
+        misplaced_tiles = 0
+
+        // Goal state is just an array of [1, 2,...,size - 1]
+        // Last element should be - 1
+        // However, by checking if last element == size
+        // we can avoid another if-statement
+        // Even the correct state will have 1 misplaced tile count
+        // so subtract 1
+        for i in range(0, (size * size)):
+            if (state[i] != (i + 1))
+                misplaced_tiles += 1
+        
+        return misplaced_tiles - 1
+
+def manhattan_distance_heuristic(problem, state):
+    size = problem.size
+    total_distance = 0
+    for i in range(0, (size * size)):
+        // Only distance for misplaced tiles
+        if (state[i] == (i + 1) || state[i] == -1)
+            continue
+
+        int goalIdx = state[i] - 1
+        int currRow = i / size
+        int currCol = i % size
+
+        int idealRow = goalIdx / size
+        int idealCol = goalIdx % size
+        // Compute difference between ideal position and current position
+        distance = abs(currRow - idealRow) + abs(currCol - idealCol)
+        total_distance += distance
+
+    return total_distance
+
+class SearchNode:
+    Members:
+        int pathCost;
+        int heuristicCost;
+        ProblemState state;
+    
+    Compare Function:
+        return pathCost + heuristicCost;
+
+Pseudo-code for A* search
+function A* search (problem, heuristic_func):
+    nodes = minheap()
+    initial_node = SearchNode(0, heuristic_func(problem.initial_state()), problem.initial_state())
+    nodes.push(initial_node)
+
+    while (!node.empty()):
+
+
+
+
+
