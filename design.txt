@@ -103,7 +103,8 @@ class SearchNode:
     Members:
         int pathCost;
         int heuristicCost;
-        ProblemState state;
+        Operator[] path;
+        int[] state;
     
     Compare Function:
         return pathCost + heuristicCost;
@@ -114,7 +115,28 @@ function A* search (problem, heuristic_func):
     initial_node = SearchNode(0, heuristic_func(problem.initial_state()), problem.initial_state())
     nodes.push(initial_node)
 
-    while (!node.empty()):
+    while True:
+        if (nodes.empty())
+            return SearchNode.EMPTY;
+
+        top_node = node.pop()
+        if problem.is_goal_state(top_node.state):
+            return top_node;
+
+        blank_idx = problem.find_blank_idx(top_node.state)
+        operators = problem.possible_operators(top_node.state, blank_idx=blank_idx)
+        for operator in operators:
+            new_state = problem.apply_operator(top_node.state, blank_idx=blank_idx)
+            heuristic = heuristic_func(problem, new_state)
+            new_path_cost = top_node.path_cost + 1
+            operator_path = top_node.path + operator
+            new_node = SearchNode(new_path_cost, heuristic, operator_path, new_state)
+            nodes.push(new_node)
+
+// Build user interface
+
+// Ask user if they want to use pre-existing puzzle or not
+
 
 
 
