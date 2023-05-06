@@ -1,11 +1,14 @@
 from enum import IntEnum
-import random
+import functools
+import heapq
+from typing import Callable
 
 # Resources used:
 # "The Blind Search and Heuristic Search lecture slides and notes annotated from lecture."
 # Python documentation
 # https://www.geeksforgeeks.org/queue-in-python/#
 # https://en.wikipedia.org/wiki/A*_search_algorithm
+# https://stackoverflow.com/questions/5824382/enabling-comparison-for-classes
 
 
 # Must implement
@@ -29,22 +32,17 @@ class Operators(IntEnum):
     RIGHT = 4
 
 class NPuzzle:
-    def __init__(self, n: int) -> None:
+    blank_elem = 0
+
+    def __init__(self, n: int, initial_state: tuple[int]) -> None:
         self.size: int = n
-
-    def create_rand_state(self) -> list[int]:
-        capacity = self.size * self.size
-        initial = [ i+1 for i in range(0, capacity)]
-        initial[-1] = -1
-        random.shuffle(initial)
-
-        return initial
+        self.initial_state = initial_state
     
-    def get_blank_idx(state: list[int]):
-        return state.index(-1)
+    def get_blank_idx(state: tuple[int]):
+        return state.index(NPuzzle.blank_elem)
     
     def get_possible_operators(self, blank_idx: int) -> list[Operators]:
-        blank_row = blank_idx / self.size
+        blank_row = blank_idx // self.size
         blank_col = blank_idx % self.size
 
         operators = []
@@ -62,11 +60,11 @@ class NPuzzle:
         
         return operators
 
-    def apply_operator(self, state: list[int], blank_idx: int,
-                       operator: Operators) -> list[int]:
+    def apply_operator(self, state: tuple[int], blank_idx: int,
+                       operator: Operators) -> tuple[int]:
         new_blank_idx = blank_idx
         # Clone state
-        new_state = state.copy()
+        new_state = list(state)
 
         match operator:
             case Operators.UP:
@@ -80,18 +78,18 @@ class NPuzzle:
         
         # Swap what's in the new blank index
         temp = new_state[new_blank_idx]
-        new_state[new_blank_idx] = -1
+        new_state[new_blank_idx] = NPuzzle.blank_elem
         new_state[blank_idx] = temp
 
-        return new_state
+        return tuple(new_state)
     
-    def is_goal_state(self, state: list[int]) -> bool:
+    def is_goal_state(self, state: tuple[int]) -> bool:
         for i in range(0, ((self.size * self.size) - 1)):
             if (state[i] != i + 1):
                 return False
         return True
 
-def misplaced_tile_heuristic(problem: NPuzzle, state: list[int]) -> int:
+def misplaced_tile_heuristic(problem: NPuzzle, state: tuple[int]) -> int:
         size = problem.size
         misplaced_tiles = 0
 
@@ -107,43 +105,83 @@ def misplaced_tile_heuristic(problem: NPuzzle, state: list[int]) -> int:
         
         return misplaced_tiles - 1
 
-def manhattan_distance_heuristic(problem: NPuzzle, state: list[int]):
+def manhattan_distance_heuristic(problem: NPuzzle, state: tuple[int]):
     size = problem.size
     total_distance = 0
     for i in range(0, (size * size)):
         # Only distance for misplaced tiles
-        if (state[i] == (i + 1) or state[i] == -1):
+        if (state[i] == (i + 1) or state[i] == NPuzzle.blank_elem):
             continue
 
-        # Compute difference between goal index and current index
+        curr_row = i // size
+        curr_col = i % size
         # Goal index = state[i] (e.g 8) - 1 (idx 7)
-        idx_dif = abs(i - (state[i] - 1))
-        total_distance += (idx_dif // size) + (idx_dif % size)
+        goal_idx = state[i] - 1
+        goal_row = goal_idx // size
+        goal_col = goal_idx % size
+
+        # Compute difference between goal index and current index
+        total_distance += abs(curr_row - goal_row) + abs(curr_col - goal_col)
 
     return total_distance
 
-# TODO Move to user interface
-def print_state(state: list[int], prefix=""):
-    stringify = lambda s: prefix + "[" + ",".join(map(str, s)) + "]"
-    print(stringify(state[0:3]))
-    print(stringify(state[3:6]))
-    print(stringify(state[6:9]))
+def uniform_cost_heuristic(problem: NPuzzle, state: tuple[int]):
+    return 0
 
-def print_operators(operators: list[Operators]):
-    print("[" + ", ".join(map(lambda op: ["UP","DOWN","LEFT","RIGHT"][int(op) - 1], operators)) + "]")
+@functools.total_ordering
+class SearchNode:
+    def __init__(self, path_cost: int, heuristic_cost: int,
+                 parent_node, state: tuple[int]):
+        self.path_cost = path_cost
+        self.heuristic_cost = heuristic_cost
+        self.parent_node = parent_node
+        self.state = state
+    
+    def __eq__(self, other) -> bool:
+        return self.path_cost == other.path_cost and \
+            self.heuristic_cost == other.path_cost and \
+            self.parent_node == other.parent_node and \
+            self.state == other.state
 
-# TESTING CODE
-npuzzle = NPuzzle(3)
-initial_state = npuzzle.create_rand_state()
-print("Initial State: ")
-print_state(initial_state, prefix="  ")
-initial_state_blank = NPuzzle.get_blank_idx(initial_state)
-possible_ops = npuzzle.get_possible_operators(initial_state_blank)
-print("Operators: ")
-print_operators(possible_ops)
-new_state = npuzzle.apply_operator(initial_state, initial_state_blank, possible_ops[0])
-print("New State:")
-print_state(new_state, "  ")
-misplaced_tiles = misplaced_tile_heuristic(npuzzle, new_state)
-print(f"Misplaced Tiles: {misplaced_tiles}")
-print(f"Manhattan Distance: {manhattan_distance_heuristic(npuzzle, new_state)}")
+    def __gt__(self, other) -> bool:
+        return (self.heuristic_cost + self.path_cost) >\
+              (other.heuristic_cost + other.path_cost)
+
+def a_star_search(problem: NPuzzle, heuristic_func: Callable[[NPuzzle, tuple[int]], int]) -> SearchNode:
+    nodes: list[SearchNode] = []
+    max_heap_size = 0
+    nodes_expanded = 1
+
+    heapq.heapify(nodes)
+
+    repeated_nodes: set[tuple[int]] = set()
+
+    initial_node = SearchNode(0, heuristic_func(problem, problem.initial_state), None, problem.initial_state)
+    heapq.heappush(nodes, initial_node)
+
+    while True:
+        nodes_length = len(nodes)
+        if nodes_length > max_heap_size:
+            max_heap_size = nodes_length
+
+        if nodes_length == 0:
+            return (SearchNode(0, 0, None, ()), max_heap_size, nodes_expanded)
+
+        top_node = heapq.heappop(nodes)
+        if problem.is_goal_state(top_node.state):
+            return (top_node, max_heap_size, nodes_expanded)
+
+        repeated_nodes.add(top_node.state)
+        blank_idx = NPuzzle.get_blank_idx(top_node.state)
+        nodes_expanded += 1
+
+        operators = problem.get_possible_operators(blank_idx)
+        for operator in operators:
+            new_state = problem.apply_operator(top_node.state, blank_idx, operator)
+            if (new_state in repeated_nodes):
+                continue
+
+            heuristic = heuristic_func(problem, new_state)
+            new_path_cost = top_node.path_cost + 1
+            new_node = SearchNode(new_path_cost, heuristic, top_node, new_state)
+            heapq.heappush(nodes, new_node)
