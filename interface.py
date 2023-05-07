@@ -1,10 +1,33 @@
+import time
 import nPuzzle
 
 # Input texts adapted from the example user interface shown in the project description.
 
 # Determining functions
 def select_default_puzzle():
-    return tuple([1,2,3,4,5,6,0,7,8])
+    print("Type in the number representing which default puzzle to use: \
+1 - Depth 0, 2 - Depth 2, 3 - D4, 4 - D8, 5 - D12, 6 - D16, 7 - D20, 8 - D24")
+    num_choice = 0
+    while num_choice < 1 or num_choice > 8:
+        choice = input("")
+        if not choice.isdigit() or int(choice) < 1 or int(choice) > 8:
+            print("Invalid choice entered!")
+            continue
+        num_choice = int(choice)
+    
+    default_puzzle = [
+        [1,2,3,4,5,6,7,8,0],
+        [1,2,3,4,5,6,0,7,8],
+        [1,2,3,5,0,6,4,7,8],
+        [1,3,6,5,0,2,4,7,8],
+        [1,3,6,5,0,7,4,8,2],
+        [1,6,7,5,0,3,4,8,2],
+        [7,1,2,4,8,5,6,3,0],
+        [0,7,2,4,6,1,3,5,8]
+    ][num_choice - 1]
+
+    return tuple(default_puzzle)
+        
 
 def enter_puzzle():
     print("""Enter your puzzle, using a zero to represent the blank. Please only enter \
@@ -45,8 +68,8 @@ def select_puzzle():
 def select_algorithm():
     algorithm_num = 0
     while algorithm_num < 1 or algorithm_num > 3:
-        choice = input("Select algorithm. (1) for Uniform Cost Search, (2) for the\
-            Misplaced Tile Heuristic, or (3) the Manhattan Distance Heuristic.\n")
+        choice = input("Select algorithm. (1) for Uniform Cost Search, (2) for the \
+Misplaced Tile Heuristic, or (3) the Manhattan Distance Heuristic.\n")
         if len(choice) != 1 or not choice.isdigit() or int(choice) < 1 or int(choice) > 3:
             print("Invalid selection!")
             continue
@@ -80,10 +103,12 @@ algorithm = select_algorithm()
 
 problem = nPuzzle.NPuzzle(3, puzzle)
 
+start_time = time.time()
 solution, max_queue_size, nodes_expanded = nPuzzle.a_star_search(problem, algorithm)
+end_time = time.time()
 solution_path = get_solution_path(solution)
 print("Initial State:")
-print_state(solution_path[0].state)
+print_state(puzzle)
 
 for node in solution_path[1:]:
     print(f"The best state to expand with a g(n) = {node.path_cost} and h(n) = {node.heuristic_cost} is:")
@@ -93,3 +118,4 @@ print("Goal state!\n")
 print(f"Solution depth was {solution.path_cost}")
 print(f"Number of nodes expanded: {nodes_expanded}")
 print(f"Max queue size: {max_queue_size}")
+print(f"Execution Time: {(end_time - start_time):.2f}s")
