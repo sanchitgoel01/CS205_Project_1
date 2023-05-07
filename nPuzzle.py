@@ -9,6 +9,7 @@ from typing import Callable
 # https://www.geeksforgeeks.org/queue-in-python/#
 # https://en.wikipedia.org/wiki/A*_search_algorithm
 # https://stackoverflow.com/questions/5824382/enabling-comparison-for-classes
+# https://realpython.com/documenting-python-code/
 
 
 # Must implement
@@ -25,6 +26,8 @@ from typing import Callable
 #       nodes = QUEUEING-FUNCTION(nodes, EXPAND(node, problem.OPERATORS))
 #    end
 
+# List of operators that 
+# the blank space can take.
 class Operators(IntEnum):
     UP = 1
     DOWN = 2
@@ -32,16 +35,28 @@ class Operators(IntEnum):
     RIGHT = 4
 
 class NPuzzle:
+    # Number that represents the blank space:
     blank_elem = 0
 
     def __init__(self, n: int, initial_state: tuple[int]) -> None:
-        self.size: int = n
+        """
+        Parameters:
+            - n: Size of the puzzle board. Represents an n x n puzzle.
+            - initial_state: Initial state of the puzzle.
+        """
+        self.size = n
         self.initial_state = initial_state
     
     def get_blank_idx(state: tuple[int]):
+        """Get the location of the blank space within the given state."""
         return state.index(NPuzzle.blank_elem)
     
     def get_possible_operators(self, blank_idx: int) -> list[Operators]:
+        """
+        Get a list of all possible operators given the position
+        of the blank space.
+        """
+
         blank_row = blank_idx // self.size
         blank_col = blank_idx % self.size
 
@@ -62,6 +77,7 @@ class NPuzzle:
 
     def apply_operator(self, state: tuple[int], blank_idx: int,
                        operator: Operators) -> tuple[int]:
+        """Apply an operator to a given state producing a new state."""
         new_blank_idx = blank_idx
         # Clone state
         new_state = list(state)
@@ -76,7 +92,8 @@ class NPuzzle:
             case Operators.LEFT:
                 new_blank_idx -= 1
         
-        # Swap what's in the new blank index
+        # Swap the blank space with the number at
+        # the new space.
         temp = new_state[new_blank_idx]
         new_state[new_blank_idx] = NPuzzle.blank_elem
         new_state[blank_idx] = temp
@@ -84,6 +101,9 @@ class NPuzzle:
         return tuple(new_state)
     
     def is_goal_state(self, state: tuple[int]) -> bool:
+        """Check if a given state is the goal state."""
+        # Check if each index contains the correct number.
+        # Doesn't check the final blank space index.
         for i in range(0, ((self.size * self.size) - 1)):
             if (state[i] != i + 1):
                 return False
@@ -94,11 +114,9 @@ def misplaced_tile_heuristic(problem: NPuzzle, state: tuple[int]) -> int:
         misplaced_tiles = 0
 
         # Goal state is just an array of [1, 2,...,size - 1]
-        # Last element should be - 1
-        # However, by checking if last element == size
-        # we can avoid another if-statement
-        # Even the correct state will have 1 misplaced tile count
-        # so subtract 1
+        # this maps to the index of each element + 1.
+        # However, the last element should be the blank space
+        # which we don't want to count.
         for i in range(0, (size * size)):
             if (state[i] != (i + 1)):
                 misplaced_tiles += 1
@@ -109,7 +127,7 @@ def manhattan_distance_heuristic(problem: NPuzzle, state: tuple[int]):
     size = problem.size
     total_distance = 0
     for i in range(0, (size * size)):
-        # Only distance for misplaced tiles
+        # Only check distance for misplaced tiles.
         if (state[i] == (i + 1) or state[i] == NPuzzle.blank_elem):
             continue
 
@@ -137,6 +155,8 @@ class SearchNode:
         self.parent_node = parent_node
         self.state = state
     
+    # Implement comparison functions to 
+    # allow min heap to work.
     def __eq__(self, other) -> bool:
         return self.path_cost == other.path_cost and \
             self.heuristic_cost == other.path_cost and \
@@ -150,11 +170,11 @@ class SearchNode:
 def a_star_search(problem: NPuzzle, heuristic_func: Callable[[NPuzzle, tuple[int]], int]) -> SearchNode:
     nodes: list[SearchNode] = []
     max_heap_size = 0
-    nodes_expanded = 1
+    nodes_expanded = 0
 
     heapq.heapify(nodes)
 
-    repeated_nodes: set[tuple[int]] = set()
+    repeated_states: set[tuple[int]] = set()
 
     initial_node = SearchNode(0, heuristic_func(problem, problem.initial_state), None, problem.initial_state)
     heapq.heappush(nodes, initial_node)
@@ -171,14 +191,14 @@ def a_star_search(problem: NPuzzle, heuristic_func: Callable[[NPuzzle, tuple[int
         if problem.is_goal_state(top_node.state):
             return (top_node, max_heap_size, nodes_expanded)
 
-        repeated_nodes.add(top_node.state)
+        repeated_states.add(top_node.state)
         blank_idx = NPuzzle.get_blank_idx(top_node.state)
         nodes_expanded += 1
 
         operators = problem.get_possible_operators(blank_idx)
         for operator in operators:
             new_state = problem.apply_operator(top_node.state, blank_idx, operator)
-            if (new_state in repeated_nodes):
+            if (new_state in repeated_states):
                 continue
 
             heuristic = heuristic_func(problem, new_state)
