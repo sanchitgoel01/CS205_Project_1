@@ -1,0 +1,42 @@
+Depth 0 Puzzle:
+- UCS:
+    - Expanded (E): 0
+    - Queue Size (QS): 1
+- MTH: E0, Q1
+- MDH: E0, Q1
+
+D2:
+- UCS: E6, Q8
+- MTH: E2, Q3
+- MDH: E2, Q3
+
+D4:
+- UCS: E26, Q22
+- MTH: E4, Q6
+- MDH: E4, Q6
+
+D8:
+- UCS: E290, Q185
+- MTH: E16, Q15
+- MDH: E8, Q10
+
+D12:
+- UCS: E1678, Q1093
+- MTH: E99, Q76
+- MDH: E24, Q20
+
+D16:
+- UCS: E12390, Q7977, T0.18
+- MTH: E530, Q353, T.03
+- MDH: E71, Q52, T.01
+
+
+D20:
+- UCS: E74394, Q33199, T1.05
+- MTH: E2974, Q1833, T.08
+- MDH: E225, Q148, T.01
+
+D24:
+- UCS: E225957, Q71269, T3.65
+- MTH: E15592, Q8672, T.24
+- MDH: E1416, Q841, T.06
