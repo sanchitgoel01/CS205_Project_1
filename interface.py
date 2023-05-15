@@ -26,7 +26,7 @@ def select_default_puzzle():
         [0,7,2,4,6,1,3,5,8]
     ][num_choice - 1]
 
-    return tuple(default_puzzle)
+    return (3, tuple(default_puzzle))
         
 
 def enter_puzzle():
@@ -35,20 +35,27 @@ valid 8-puzzles. Enter the puzzle demilimiting the numbers with a space. Type \
 RETURN only when finished.""")
     puzzle = []
     row_idx = 0
-    row_text = ["first", "second", "third"]
+    puzzle_size = 200
+    row_text = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eigth"]
 
-    while row_idx < 3:
+    while row_idx < puzzle_size:
         text = input(f"Enter the {row_text[row_idx]} row: ")
         text = text.strip().split(" ")
 
-        if not all(map(lambda s: s.isdigit() and int(s) > -1 and int(s) < 9 and int(s) not in puzzle, text)):
+        if not all(map(lambda s: s.isdigit() and int(s) > -1 and int(s) < (puzzle_size * puzzle_size)\
+                       and int(s) not in puzzle, text)):
             print("Invalid digits entered!")
             continue
 
         puzzle.extend(list(map(lambda s: int(s), text)))
+
+        # Set puzzle size to number of entries
+        if row_idx == 0:
+            puzzle_size = len(puzzle)
+
         row_idx += 1
 
-    return tuple(puzzle)
+    return (puzzle_size, tuple(puzzle))
 
 def select_puzzle():
     sel_choice = 0
@@ -98,14 +105,15 @@ def get_solution_path(solution_state: nPuzzle.SearchNode):
 
 # Main Program
 print("Welcome to an 8-Puzzle Solver!")
-puzzle = select_puzzle()
+
+puzzle_size, puzzle = select_puzzle()
 algorithm = select_algorithm()
 
-problem = nPuzzle.NPuzzle(3, puzzle)
+problem = nPuzzle.NPuzzle(puzzle_size, puzzle)
 
-start_time = time.time()
+start_time = time.perf_counter()
 solution, max_queue_size, nodes_expanded = nPuzzle.a_star_search(problem, algorithm)
-end_time = time.time()
+end_time = time.perf_counter()
 solution_path = get_solution_path(solution)
 print("Initial State:")
 print_state(puzzle)
@@ -118,4 +126,4 @@ print("Goal state!\n")
 print(f"Solution depth was {solution.path_cost}")
 print(f"Number of nodes expanded: {nodes_expanded}")
 print(f"Max queue size: {max_queue_size}")
-print(f"Execution Time: {(end_time - start_time):.2f}s")
+print(f"Execution Time: {(end_time - start_time)*1000:.4}ms")
